@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>E-commerce Store</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>E-commerce Store</h1>
+    <h2>Add to Cart</h2>
+    <form id="add-to-cart-form">
+        <input type="text" id="item-id" placeholder="Item ID" required>
+        <input type="text" id="item-name" placeholder="Item Name" required>
+        <input type="number" id="item-quantity" placeholder="Quantity" required>
+        <input type="number" id="item-price" placeholder="Price" step="0.01" required>
+        <button type="submit">Add to Cart</button>
+    </form>
+
+    <h2>Checkout</h2>
+    <form id="checkout-form">
+        <input type="text" id="discount-code" placeholder="Discount Code">
+        <button type="submit">Checkout</button>
+    </form>
+
+    <h2>Cart</h2>
+    <ul id="cart-items">
+        <!-- Cart items will be appended here -->
+    </ul>
+
+    <h2>Admin</h2>
+    <button id="generate-discount-code">Generate Discount Code</button>
+    <button id="view-summary">View Summary</button>
+
+    <div id="summary">
+        <!-- Summary will be displayed here -->
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Function to add item to cart
+            $('#add-to-cart-form').on('submit', function (event) {
+                event.preventDefault();
+                const item = {
+                    itemId: $('#item-id').val(),
+                    name: $('#item-name').val(),
+                    quantity: $('#item-quantity').val(),
+                    price: $('#item-price').val()
+                };
+                $.ajax({
+                    type: 'POST',
+                    url: '/api/cart/add',
+                    contentType: 'application/json',
+                    data: JSON.stringify(item),
+                    success: function (response) {
+                        alert(response);
+                        $('#cart-items').append(`<li>${item.name} - Quantity: ${item.quantity}, Price: ${item.price}</li>`);
+                    },
+                    error: function (error) {
+                        alert('Error adding item to cart');
+                    }
+                });
+            });
+
+            // Function to checkout
+            $('#checkout-form').on('submit', function (event) {
+                event.preventDefault();
+                const discountCode = $('#discount-code').val();
+                $.ajax({
+                    type: 'POST',
+                    url: '/api/cart/checkout',
+                    data: { discountCode: discountCode },
+                    success: function (response) {
+                        alert(response);
+                        $('#cart-items').empty();
+                    },
+                    error: function (error) {
+                        alert(error.responseText);
+                    }
+                });
+            });
+
+            // Function to generate discount code
+            $('#generate-discount-code').on('click', function () {
+                $.ajax({
+                    type: 'GET',
+                    url: '/api/admin/generate-discount',
+                    success: function (response) {
+                        alert(response);
+                    },
+                    error: function (error) {
+                        alert('Error generating discount code');
+                    }
+                });
+            });
+
+            // Function to view summary
+            $('#view-summary').on('click', function () {
+                $.ajax({
+                    type: 'GET',
+                    url: '/api/admin/summary',
+                    success: function (response) {
+                        let summaryHtml = `<p>Item Count: ${response.itemCount}</p>
+                                           <p>Total Purchase Amount: ${response.totalPurchaseAmount}</p>
+                                           <p>Total Discount Amount: ${response.totalDiscountAmount}</p>
+                                           <p>Discount Codes:</p>
+                                           <ul>`;
+                        response.discountCodes.forEach(function (code) {
+                            summaryHtml += `<li>${code.code} - Used: ${code.isUsed}</li>`;
+                        });
+                        summaryHtml += `</ul>`;
+                        $('#summary').html(summaryHtml);
+                    },
+                    error: function (error) {
+                        alert('Error fetching summary');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
